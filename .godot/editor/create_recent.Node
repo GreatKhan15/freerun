@@ -1,0 +1,15 @@
+CollisionPolygon3D
+CSGPolygon3D
+WorldEnvironment
+CollisionShape3D
+StaticBody3D
+RayCast3D
+Area3D
+Node3D
+Camera3D
+SpringArm3D
+MultiplayerSynchronizer
+AnimationTree
+CharacterBody3D
+DirectionalLight3D
+CSGBox3D

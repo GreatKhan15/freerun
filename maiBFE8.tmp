@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=3 uid="uid://c5hqvd2swh76q"]
+
+[ext_resource type="Script" path="res://main_scene.gd" id="1_iks8r"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0rhd3"]
+albedo_color = Color(0.121569, 0.121569, 0.121569, 1)
+
+[node name="Node3D" type="Node3D"]
+script = ExtResource("1_iks8r")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="."]
+transform = Transform3D(413.71, 0.0014755, -0.0710699, -0.61056, 0.999997, -0.756599, 0.069943, 0.00182907, 413.709, 0, 0, 0)
+material_override = SubResource("StandardMaterial3D_0rhd3")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.139737, -0.210486, 0.967558, 0.15108, 0.961173, 0.230916, -0.978595, 0.178446, -0.102511, 0, 54.7317, 0)

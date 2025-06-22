@@ -1,0 +1,7 @@
+res://main_scene.tscn
+res://main_scene.gd
+res://CattyAnimTree.tres
+res://level1.tscn
+res://Catty.tscn
+res://Player.gd
+res://Polygon.gd
