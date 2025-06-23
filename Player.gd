@@ -36,11 +36,14 @@ var DIRECTION_LERP_SPEED = 5.0
 var VELOCITY_INTERPOLATION_GROUND = 15.0
 var VELOCITY_INTERPOLATION_AIR = 0.5
 var WALLRUN_ANTIGRAVITY = 0.1
-var SPRINT_MULTIPLIER = 1.5
-var ROTATION_INTERPOLATION = 9.0
+var SPRINT_MULTIPLIER = 1.3
+var ROTATION_INTERPOLATION = 3.0
 var BOUNCE_STRENGTH = 9.0
+var ACCELERATION_RATE = 3.0
+var BRAKE_RATE = 6.0
 
 var sprintPressed = false
+var sprinting = false
 var jumped = false
 
 @export var mouse_sensitivity = 0.002
@@ -93,9 +96,20 @@ func _process(delta):
 	animTree.set("parameters/StateMachine/conditions/isNotWallLeft",!is_wall_running_left)
 	animTree.set("parameters/StateMachine/conditions/isWallRight",is_wall_running_right)
 	animTree.set("parameters/StateMachine/conditions/isNotWallRight",!is_wall_running_right)
+	animTree.set("parameters/StateMachine/conditions/FastRun",sprinting)
+	animTree.set("parameters/StateMachine/conditions/notFastRun",!sprinting)
 	
-	global_rotation.y = lerp_angle(global_rotation.y,target_rotation.y,delta*ROTATION_INTERPOLATION)
+	global_rotation.y = move_toward_angle(
+		global_rotation.y,
+		target_rotation.y,
+		ROTATION_INTERPOLATION * delta
+	)
 	spring_arm.global_rotation.y = target_rotation.y
+
+func move_toward_angle(current: float, target: float, max_delta: float) -> float:
+	var diff = angle_difference(current, target)
+	var step = clamp(diff, -max_delta, max_delta)
+	return current + step
 
 func _physics_process(delta):
 	if not is_multiplayer_authority():
@@ -107,21 +121,30 @@ func _physics_process(delta):
 	input_dir = Vector2.ZERO
 	input_dir.x = Input.get_axis("ui_left", "ui_right")
 	input_dir.y = Input.get_axis("ui_up", "ui_down")
+	
 	if sprintPressed:
 		input_dir.x = 0
 		if input_dir.y < 0:
-			input_dir.y *= 1.5
+			sprinting = true
+		else:
+			sprinting = false
+	else:
+		sprinting = false
+		
 	direction = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 	
 	if is_on_floor() or is_wall_running:
 		target_velocity.x = direction.x * speed
 		target_velocity.z = direction.z * speed
+		if sprinting and not is_wall_running:
+			target_velocity *= SPRINT_MULTIPLIER
 		is_jumping = false
 		is_falling = false
 	else:
 		target_velocity.x = velocity.x
 		target_velocity.z = velocity.z
 		is_sliding = false
+	
 	
 	if jumped and is_on_floor():
 		velocity.y = jump_strength
@@ -173,7 +196,7 @@ func _physics_process(delta):
 		
 	if is_sliding:
 		slide_timer -= delta
-		velocity *= 1.1  # Boost speed
+		target_velocity *= 1.2  # Boost speed
 		
 		var ray_origin = global_position
 		var ray_target = global_position + Vector3.DOWN * 2.0
@@ -196,13 +219,16 @@ func _physics_process(delta):
 			var dot = slope_direction.dot(forward)
 
 			if dot > 0:
-				velocity *= 1.0 + angle_radians / 7
+				target_velocity *= 1.0 + angle_radians / 9
 			elif dot < 0:
-				velocity *= 1.0 - angle_radians
+				target_velocity *= 1.0 - angle_radians / 2
 
 		if slide_timer <= 0:
 			is_sliding = false
 			slide_target_scale_y = 1.0
+	else:
+		is_sliding = false
+		slide_target_scale_y = 1.0
 	
 	var current_y = collision_shape.scale.y
 	var new_y = lerp(current_y, slide_target_scale_y, slide_scale_speed * delta)
@@ -214,8 +240,30 @@ func _physics_process(delta):
 		target_velocity *= SPRINT_MULTIPLIER
 	
 	if is_on_floor():
-		velocity.x = lerp(velocity.x,target_velocity.x,delta*VELOCITY_INTERPOLATION_GROUND)
-		velocity.z = lerp(velocity.z,target_velocity.z,delta*VELOCITY_INTERPOLATION_GROUND)
+		if target_velocity != Vector3.ZERO:
+			velocity.x = lerp(velocity.x,target_velocity.x,delta*ACCELERATION_RATE)
+			velocity.z = lerp(velocity.z,target_velocity.z,delta*ACCELERATION_RATE)
+		else:
+			velocity.x = lerp(velocity.x,target_velocity.x,delta*BRAKE_RATE)
+			velocity.z = lerp(velocity.z,target_velocity.z,delta*BRAKE_RATE)
+			
+		#if velocity.x < target_velocity.x:
+			#velocity.x += ACCELERATION_RATE
+			#if target_velocity.x - velocity.x < ACCELERATION_RATE:
+				#velocity.x = target_velocity.x
+		#elif velocity.x > target_velocity.x:
+			#velocity.x -= BRAKE_RATE
+			#if velocity.x - target_velocity.x < BRAKE_RATE:
+				#velocity.x = target_velocity.x
+				#
+		#if velocity.z < target_velocity.z:
+			#velocity.z += ACCELERATION_RATE
+			#if target_velocity.z - velocity.z < ACCELERATION_RATE:
+				#velocity.z = target_velocity.z
+		#elif velocity.z > target_velocity.z:
+			#velocity.z -= BRAKE_RATE
+			#if velocity.z - target_velocity.z < BRAKE_RATE:
+				#velocity.z = target_velocity.z
 	else:
 		velocity.x = lerp(velocity.x,target_velocity.x,delta*VELOCITY_INTERPOLATION_AIR)
 		velocity.z = lerp(velocity.z,target_velocity.z,delta*VELOCITY_INTERPOLATION_AIR)
@@ -229,7 +277,17 @@ func sync_position(pos: Vector3, vel: Vector3):
 	global_position = pos
 	velocity = vel
 
-func setup_player(id: int):
+func setup_player(id: int,pos: Vector3):
 	player_id = id
 	name = str(id)
+	teleport_to(pos)
 	set_multiplayer_authority(id)
+
+
+func teleport_to(pos: Vector3):
+	set_physics_process(false)
+	await get_tree().physics_frame     # ensure physics state is stable
+	global_position = pos
+	velocity = Vector3.ZERO
+	await get_tree().physics_frame     # let the new position "stick"
+	set_physics_process(true)

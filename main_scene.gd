@@ -46,10 +46,9 @@ func _on_peer_disconnected(id: int):
 
 func spawn_player(id: int):
 	var player = player_scene.instantiate()
-	player.setup_player(id)
 	players[id] = player
-	player.global_position = level.get_node("SpawnPoint").global_position
 	add_child(player)
+	player.setup_player(id,level.get_node("SpawnPoint").global_position)
 	if multiplayer.is_server():
 		var level = get_node_or_null("Level")
 		if level:
