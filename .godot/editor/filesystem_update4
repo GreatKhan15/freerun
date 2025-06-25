@@ -1,6 +1,6 @@
-res://level1.tscn
+res://main_scene.tscn
 res://main_scene.gd
 res://CattyAnimTree.tres
-res://main_scene.tscn
+res://level1.tscn
 res://Catty.tscn
 res://Player.gd
