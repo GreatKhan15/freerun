@@ -91,7 +91,8 @@ func _input(event):
 		perform_trick(current_trick)
 		
 	if Input.is_action_just_pressed("ui_crouch"):
-		cancel_hang = true
+		if is_hanging:
+			cancel_hang = true
 		if is_on_floor() and input_dir.length() > 0 and not is_sliding:
 			is_sliding = true
 			slide_timer = slide_time
@@ -137,6 +138,9 @@ func _on_animation_tree_animation_finished(anim_name):
 	if anim_name == "Vault":
 		trick=false
 		vault=false
+	if anim_name == "Vault2":
+		trick=false
+		vault=false
 	if anim_name == "WallHang":
 		is_hang_climbing = true
 	if anim_name == "WallHangClimb":
@@ -158,7 +162,7 @@ func _process(delta):
 	if not is_multiplayer_authority():
 		return
 	
-	if cancel_hang and not is_hang_climbing:
+	if cancel_hang and is_hanging and not is_hang_climbing:
 		cameraControlled = true
 		is_hanging = false
 		is_falling = true
@@ -244,7 +248,6 @@ func _physics_process(delta):
 		
 		is_jumping = false
 		is_falling = false
-		is_hanging = false
 		cancel_hang = false
 	else:
 		target_velocity.x = velocity.x
@@ -418,19 +421,18 @@ func teleport_to(pos: Vector3):
 	set_physics_process(true)
 
 func setup_vault():
+	var grab_global_pos = global_position
 	
-	var obstacle_position = obstacle.global_position
-	var player_pos: Vector3 = global_position
-	var box_extents: Vector3 = obstacle.scale*0.5
-
-	var player_local_pos: Vector3 = player_pos - obstacle_position
-	var grab_local_pos: Vector3 = player_local_pos
-	grab_local_pos.y = box_extents.y - 0.95
-	grab_local_pos.x = clamp(grab_local_pos.x, -box_extents.x, box_extents.x)
-	grab_local_pos.z = clamp(grab_local_pos.z, -box_extents.z, box_extents.z)
-	var grab_global_pos: Vector3 = obstacle_position + grab_local_pos
-
-	var approach_dir: Vector3 = (grab_global_pos - player_pos).normalized()
+	grab_global_pos.x = clamp(grab_global_pos.x,
+		obstacle.global_position.x - (obstacle.scale.x*0.5),
+		obstacle.global_position.x + (obstacle.scale.x*0.5))
+	grab_global_pos.z = clamp(grab_global_pos.z,
+		obstacle.global_position.z - (obstacle.scale.z*0.5),
+		obstacle.global_position.z + (obstacle.scale.z*0.5))
+	grab_global_pos.y = obstacle.global_position.y + (obstacle.scale.y*0.5)
+	
+	
+	var approach_dir: Vector3 = (grab_global_pos - global_position).normalized()
 	var temp = global_rotation
 	var tempPos = global_position
 	
@@ -441,27 +443,26 @@ func setup_vault():
 	target_rotation.y = forced_rotation.y
 	cameraControlled = false
 	
+	var forward = -global_transform.basis.z.normalized()
+	forward.y = 0.0
+	
 	trickCheckpointCount = 3
 	trickCheckpoints[1] = grab_global_pos
+	trickCheckpoints[1].y -= 0.95
 	
-	var forward = -global_transform.basis.z.normalized()
-	
-	trickCheckpoints[2] = grab_global_pos + (forward * box_extents * 2)
-	trickCheckpoints[2].y = grab_global_pos.y
-	trickCheckpoints[3] = grab_global_pos + (forward * box_extents * 7)
+	trickCheckpoints[2] = grab_global_pos + (forward * obstacle.scale * 2)
+	trickCheckpoints[2].y = trickCheckpoints[1].y
+	trickCheckpoints[3] = grab_global_pos + (forward * obstacle.scale * 3)
 	trickCheckpoints[3].y = tempPos.y
 	
-	var trickCheckpointNormalizedTimes = {1: 0.3,2: 0.7,3: 1}
+	var trickCheckpointNormalizedTimes = {1: 0.3,2: 0.7,3: 1.0}
 	var anim_name = "Vault2"
 	var base_length = $AnimationPlayer.get_animation(anim_name).length
-
-	# Get the actual time scale from the AnimationTree TimeScale node
-	trickAnimationSpeed = 0.10
-
-	# Adjusted duration with speed applied
+	
+	trickAnimationSpeed = 1.2
+	
 	var scaled_length = base_length / trickAnimationSpeed
 	
-	# Convert normalized times to real times
 	for i in trickCheckpointNormalizedTimes:
 		trickCheckpointTimers[i] = trickCheckpointNormalizedTimes[i] * scaled_length
 	
@@ -522,8 +523,8 @@ func setup_hang():
 
 func perform_vault(delta):
 	$CollisionShape3D.disabled = true
-	global_position = lerp(global_position,trickCheckpoints[trickCheckpointCurrent],delta*3.0 * trickAnimationSpeed)
-	global_position = global_position.move_toward(trickCheckpoints[trickCheckpointCurrent],delta*3.0 * trickAnimationSpeed )
+	global_position = lerp(global_position,trickCheckpoints[trickCheckpointCurrent],delta*2.0 * trickAnimationSpeed)
+	global_position = global_position.move_toward(trickCheckpoints[trickCheckpointCurrent],delta*2.0 * trickAnimationSpeed )
 	if trickTimer > trickCheckpointTimers[trickCheckpointCurrent]:
 		trickCheckpointCurrent += 1
 		if trickCheckpointCurrent > trickCheckpointCount:
@@ -546,7 +547,7 @@ func perform_hanging(delta):
 			trickTimer = 0
 			trick = false
 			cameraControlled = true
-			print("trick false")
+			print("hanging timer end")
 			target_rotation.y = global_rotation.y
 			$CollisionShape3D.disabled = false
 	trickTimer+=delta
@@ -574,3 +575,24 @@ func find_obstacle_top(from_pos: Vector3, direction: Vector3, min_y: float, max_
 			max_y = mid_y  # No hit, move down
 
 	return global_position.y + ((min_y + max_y) / 2.0)
+
+func spawn_debug_marker(position: Vector3, text := ""):
+	var mesh_instance := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius = 0.25
+	mesh_instance.mesh = sphere
+	mesh_instance.global_position = position
+
+	# Give it a bright material so it's visible
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1, 0, 0)
+	mesh_instance.material_override = mat
+
+	get_tree().root.add_child(mesh_instance)
+
+	if text != "":
+		var label := Label3D.new()
+		label.text = text
+		label.position = Vector3(0, 0.5, 0)
+		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		mesh_instance.add_child(label)

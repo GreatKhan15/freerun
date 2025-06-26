@@ -275,7 +275,6 @@ transitions = ["Start", "BlendSpace2D", SubResource("AnimationNodeStateMachineTr
 graph_offset = Vector2(-277.765, -138)
 
 [resource]
-graph_offset = Vector2(-315.007, 71.8307)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_j1hef")
 nodes/Animation/position = Vector2(740, 240)
 nodes/FireShot/node = SubResource("AnimationNodeOneShot_2ivvj")
