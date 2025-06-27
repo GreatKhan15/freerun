@@ -63,7 +63,6 @@ var jumped = false
 var vault = false
 var trick = false
 
-
 var obstacle
 
 @export var mouse_sensitivity = 0.002
@@ -189,25 +188,29 @@ func _process(delta):
 	animTree.set("parameters/StateMachine/TrickMachine/conditions/Vault",vault)
 	
 	if cameraControlled:
-		if is_on_floor() or is_wall_running:
+		if is_on_floor() and velocity.length()>0.1:
+			var temp = spring_arm.global_rotation
 			global_rotation.y = move_toward_angle(
 				global_rotation.y,
 				target_rotation.y,
 				ROTATION_INTERPOLATION * delta
 			)
+			spring_arm.global_rotation = temp
 	else:
 		global_rotation.y = lerp_angle(global_rotation.y,forced_rotation.y,delta*5.0)
 	
 	camera.global_position = lerp(camera.global_position,cameraPositionNode.global_position,delta*10.0)
 	camera.look_at(spring_arm.global_position)
 	
+	#Scan for a wallgrab
 	if not is_on_floor() and not is_wall_running and not cancel_hang:
-		wallHangFrontRC.force_raycast_update()
-		wallHangUpperRC.force_raycast_update()
 		wallHangUnderRC.force_raycast_update()
-		if wallHangFrontRC.is_colliding() and not wallHangUpperRC.is_colliding() and not wallHangUnderRC.is_colliding() and not is_hanging:
-			animTree.set("parameters/JumpShot/request",AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT)
-			perform_trick(2)
+		if not wallHangUnderRC.is_colliding():
+			wallHangFrontRC.force_raycast_update()
+			wallHangUpperRC.force_raycast_update()
+			if wallHangFrontRC.is_colliding() and not wallHangUpperRC.is_colliding() and not is_hanging:
+				animTree.set("parameters/JumpShot/request",AnimationNodeOneShot.ONE_SHOT_REQUEST_ABORT)
+				perform_trick(2)
 
 func move_toward_angle(current: float, target: float, max_delta: float) -> float:
 	var diff = angle_difference(current, target)
@@ -261,7 +264,8 @@ func _physics_process(delta):
 		if is_hanging:
 			perform_hanging(delta)
 	else:
-		$CollisionShape3D.disabled = false
+		if $CollisionShape3D.disabled:
+			$CollisionShape3D.disabled = false
 		if jumped and is_on_floor():
 			velocity.y = jump_strength
 			is_jumping = true
@@ -290,7 +294,7 @@ func _physics_process(delta):
 			animTree.set("parameters/JumpShot/request",AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
 	
 	# Wall Run
-	if not is_wall_running:
+	if not is_wall_running and not is_on_floor():
 		wallRightRaycast.force_raycast_update()
 		wallLeftRaycast.force_raycast_update()
 		if wallRightRaycast.is_colliding() and Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT):
@@ -377,11 +381,12 @@ func _physics_process(delta):
 		is_sliding = false
 		slide_target_scale_y = 1.0
 	
-	var current_y = collision_shape.scale.y
-	var new_y = lerp(current_y, slide_target_scale_y, slide_scale_speed * delta)
-	collision_shape.scale.y = new_y
-	collision_shape.position.y = collision_shape.scale.y
-	spring_arm.position.y = collision_shape.shape.height*collision_shape.scale.y
+	if abs(collision_shape.scale.y - slide_target_scale_y) > 0.05:
+		var current_y = collision_shape.scale.y
+		var new_y = lerp(current_y, slide_target_scale_y, slide_scale_speed * delta)
+		collision_shape.scale.y = new_y
+		collision_shape.position.y = collision_shape.scale.y
+		spring_arm.position.y = collision_shape.shape.height*collision_shape.scale.y
 	
 	if sprintPressed:
 		target_velocity *= SPRINT_MULTIPLIER
@@ -476,7 +481,6 @@ func setup_vault():
 	animTree.set("parameters/StateMachine/TrickMachine/BlendTree/TimeScale/scale",trickAnimationSpeed)
 
 func setup_hang():
-	
 	trick = true
 	is_hanging = true
 	
@@ -494,7 +498,7 @@ func setup_hang():
 	
 	var top_y = find_obstacle_top(global_position, -wall_direction, 0,2.5)
 	
-	var trickCheckpointNormalizedTimes = {1: 1.0,2: 2.0}
+	var trickCheckpointNormalizedTimes = {1: 1.0,2: 1.0}
 	trickCheckpointCount = 2
 	trickCheckpoints[1] = hit_point + hang_offset
 	trickCheckpoints[1].y = top_y - 2.35
@@ -503,18 +507,18 @@ func setup_hang():
 	trickCheckpoints[3] = hit_point  - (hang_offset *2)
 	trickCheckpoints[3].y = top_y
 	
-	trickAnimationSpeed = 2.0
+	trickAnimationSpeed = 0.3
 	
 	var anim_name = "WallHang"
 	var base_length = $AnimationPlayer.get_animation(anim_name).length
 	var scaled_length1 = base_length / trickAnimationSpeed
-	
 	var anim_name2 = "WallHangClimb"
 	var base_length2 = $AnimationPlayer.get_animation(anim_name2).length
 	var scaled_length2 = base_length2 / trickAnimationSpeed
 	
 	trickCheckpointTimers[1] = trickCheckpointNormalizedTimes[1] * scaled_length1
 	trickCheckpointTimers[2] = trickCheckpointNormalizedTimes[2] * scaled_length2
+	trickCheckpointTimers[2] += trickCheckpointTimers[1]
 	
 	trickCheckpointCurrent = 1
 	trickTimer = 0.0
@@ -531,6 +535,7 @@ func perform_vault(delta):
 			trickCheckpointCurrent = 0
 			trickTimer = 0
 			trick = false
+			vault = false
 			cameraControlled = true
 			target_rotation.y = global_rotation.y
 			$CollisionShape3D.disabled = false
@@ -539,17 +544,20 @@ func perform_vault(delta):
 func perform_hanging(delta):
 	$CollisionShape3D.disabled = true
 	global_position = lerp(global_position,trickCheckpoints[trickCheckpointCurrent],delta*3.0 * trickAnimationSpeed)
-	global_position = global_position.move_toward(trickCheckpoints[trickCheckpointCurrent],delta*3.0 * trickAnimationSpeed )
+	#global_position = global_position.move_toward(trickCheckpoints[trickCheckpointCurrent],delta*2.0 * trickAnimationSpeed )
 	if trickTimer > trickCheckpointTimers[trickCheckpointCurrent]:
 		trickCheckpointCurrent += 1
 		if trickCheckpointCurrent > trickCheckpointCount:
-			trickCheckpointCurrent = 0
+			#trickCheckpointCurrent = 0
 			trickTimer = 0
 			trick = false
+			is_hanging = false
+			is_hang_climbing = false
 			cameraControlled = true
 			print("hanging timer end")
 			target_rotation.y = global_rotation.y
 			$CollisionShape3D.disabled = false
+			global_position = trickCheckpoints[3]
 	trickTimer+=delta
 
 func delayed_camera_enable(delay_time: float):
