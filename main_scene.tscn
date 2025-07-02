@@ -1,10 +1,233 @@
-[gd_scene load_steps=4 format=3 uid="uid://c5hqvd2swh76q"]
+[gd_scene load_steps=5 format=3 uid="uid://c5hqvd2swh76q"]
 
 [ext_resource type="Script" path="res://main_scene.gd" id="1_iks8r"]
 [ext_resource type="PackedScene" uid="uid://bbkgtgd71gc0v" path="res://Catty.tscn" id="2_rj880"]
 [ext_resource type="PackedScene" uid="uid://bf5gwq4g072dv" path="res://level1.tscn" id="3_b3gln"]
+[ext_resource type="FontFile" uid="uid://cyehx80qm2ey" path="res://Textures/VeniteAdoremus-rgRBA.ttf" id="4_ntgww"]
 
 [node name="Main_scene" type="Node3D"]
 script = ExtResource("1_iks8r")
-player_scene = ExtResource("2_rj880")
-level_scene = ExtResource("3_b3gln")
+playerScene = ExtResource("2_rj880")
+map = ExtResource("3_b3gln")
+
+[node name="Map" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="Players" type="Node3D" parent="."]
+unique_name_in_owner = true
+
+[node name="MapSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Map")
+
+[node name="PlayersSpawner" type="MultiplayerSpawner" parent="."]
+unique_name_in_owner = true
+_spawnable_scenes = PackedStringArray("res://Catty.tscn")
+spawn_path = NodePath("../Players")
+
+[node name="Server" type="Control" parent="."]
+unique_name_in_owner = true
+visible = false
+modulate = Color(1, 1, 0, 1)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Server"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 23.0
+grow_horizontal = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Server/PanelContainer"]
+layout_mode = 2
+
+[node name="PublicIP" type="Label" parent="Server/PanelContainer/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Server IP Here"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReferenceRect" type="ReferenceRect" parent="Server"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+border_color = Color(1, 1, 1, 1)
+border_width = 6.0
+editor_only = false
+
+[node name="Chat" type="Control" parent="."]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -54.0
+offset_top = -14.0
+offset_right = -54.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MessagesBox" type="PanelContainer" parent="Chat"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -195.0
+offset_right = 214.0
+grow_vertical = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="Chat/MessagesBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="Messages" type="VBoxContainer" parent="Chat/MessagesBox/MarginContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Label0" type="Label" parent="Chat/MessagesBox/MarginContainer/Messages"]
+layout_mode = 2
+
+[node name="Label1" type="Label" parent="Chat/MessagesBox/MarginContainer/Messages"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="Chat/MessagesBox/MarginContainer/Messages"]
+layout_mode = 2
+
+[node name="Label3" type="Label" parent="Chat/MessagesBox/MarginContainer/Messages"]
+layout_mode = 2
+
+[node name="Label4" type="Label" parent="Chat/MessagesBox/MarginContainer/Messages"]
+layout_mode = 2
+
+[node name="Label5" type="Label" parent="Chat/MessagesBox/MarginContainer/Messages"]
+layout_mode = 2
+
+[node name="Label6" type="Label" parent="Chat/MessagesBox/MarginContainer/Messages"]
+layout_mode = 2
+
+[node name="Say" type="LineEdit" parent="Chat"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -33.5313
+offset_top = -31.0
+offset_right = 33.5313
+grow_horizontal = 2
+grow_vertical = 0
+placeholder_text = "Say"
+
+[node name="Lobby" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -96.0
+offset_top = -55.0
+offset_right = 96.0
+offset_bottom = 55.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Lobby"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Lobby/MarginContainer"]
+layout_mode = 2
+
+[node name="LineEdit" type="LineEdit" parent="Lobby/MarginContainer/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "PlayerName"
+
+[node name="HSeparator" type="HSeparator" parent="Lobby/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="EnterButton" type="Button" parent="Lobby/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Enter Game
+"
+
+[node name="Menu" type="PanelContainer" parent="."]
+unique_name_in_owner = true
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -128.362
+offset_top = -55.0
+offset_right = 128.362
+offset_bottom = 55.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Menu"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Menu/MarginContainer"]
+layout_mode = 2
+
+[node name="HostButton" type="Button" parent="Menu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_ntgww")
+text = "Start server"
+
+[node name="HSeparator" type="HSeparator" parent="Menu/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Menu/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="To" type="LineEdit" parent="Menu/MarginContainer/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(162.635, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_ntgww")
+theme_override_font_sizes/font_size = 11
+placeholder_text = "Enter server IP"
+
+[node name="joinButton" type="Button" parent="Menu/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_fonts/font = ExtResource("4_ntgww")
+text = "Join"
+
+[node name="MessagesDisapearTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+wait_time = 5.0
+one_shot = true
+
+[connection signal="pressed" from="Lobby/MarginContainer/VBoxContainer/EnterButton" to="." method="_on_enter_button_pressed"]
+[connection signal="pressed" from="Menu/MarginContainer/VBoxContainer/HostButton" to="." method="_on_host_button_pressed"]
+[connection signal="text_submitted" from="Menu/MarginContainer/VBoxContainer/HBoxContainer/To" to="." method="_on_to_text_submitted"]
+[connection signal="pressed" from="Menu/MarginContainer/VBoxContainer/HBoxContainer/joinButton" to="." method="_on_join_button_pressed"]

@@ -12,15 +12,10 @@ extends CharacterBody3D
 @onready var wallHangFrontRC : RayCast3D = $WallHangFrontRayCast
 @onready var wallHangUnderRC : RayCast3D = $WallHangUnderRayCast
 
-var is_wall_running_left: bool = false
-var is_wall_running_right: bool = false
-var is_wall_running: bool = false
+@export var player_id : int
 
 var slide_timer: float = 0.0
 var wall_normal: Vector3 = Vector3.ZERO
-var player_id: int = 1
-var direction : Vector3
-var current_direction : Vector2
 var input_dir : Vector2
 var slide_target_scale_y: float = 1.0
 var slide_scale_speed: float = 5.0  # larger = faster transition
@@ -34,6 +29,8 @@ var trickCheckpointTimers : Dictionary = {}
 var trickCheckpointCurrent : int = 1
 var trickTimer = 0.0
 var trickAnimationSpeed = 1
+var currentAnimation = "Idle"
+var savedCameraPos = Vector3(0,0,0)
 
 var speed: float = 7.0
 var jump_strength: float = 8.5
@@ -49,26 +46,74 @@ var BOUNCE_STRENGTH = 8.5
 var ACCELERATION_RATE = 3.0
 var BRAKE_RATE = 6.0
 var WALLRUN_SPEED = 9.0
+var NORMAL_FOV = 50.0
+var SLIDE_FOV = 75.0
+var RUN_FOV = 65.0
+var WIN_FOV = 85.0
+var CAMERA_WIN_DISTANCE = 7.0
+@export var raceprogress = 0.0
+var targetCameraFov = NORMAL_FOV
 
 var cameraControlled = true
-var is_sliding: bool = false
-var is_jumping = false
-var is_hanging = false
-var is_hang_climbing = false
-var cancel_hang = false
-var is_falling = false
+@export var is_sliding: bool = false
+@export var is_jumping = false
+@export var is_hanging = false
+@export var is_hang_climbing = false
+@export var cancel_hang = false
+@export var is_falling = false
+@export var is_wall_running_left: bool = false
+@export var is_wall_running_right: bool = false
+@export var is_wall_running: bool = false
 var sprintPressed = false
-var sprinting = false
-var jumped = false
-var vault = false
-var trick = false
+@export var sprinting = false
+@export var jumped = false
+@export var vault = false
+@export var trick = false
+@export var raceStarted = false
+@export var raceFinished = false
+
+@export var direction : Vector3
+@export var current_direction : Vector2
 
 var obstacle
 
 @export var mouse_sensitivity = 0.002
 var rotation_x = 0.0
 
+func _enter_tree():
+	set_multiplayer_authority(name.to_int())
+
+func _ready():
+	if multiplayer.get_unique_id() != player_id:
+		set_process(false)
+		set_physics_process(false)
+	
+	add_to_group("players")
+	
+	if multiplayer.get_unique_id() == player_id:
+		camera.current = true
+	else:
+		camera.current = false
+		
+	add_to_group("players")
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	spring_arm.add_excluded_object(self)
+	animTree.active = true
+	
+	floor_max_angle= deg_to_rad(60)
+	floor_snap_length= 3.0
+	
+	for area in get_tree().get_nodes_in_group("trick"):
+		area.connect("player_entered_trick_area", _on_trick_entered)
+		area.connect("player_exited_trick_area", _on_trick_exited)
+	
 func _input(event):
+	if player_id != multiplayer.get_unique_id():
+		return
+		
+	if event.is_action_pressed("ui_cancel"):
+		get_tree().quit()
+		
 	if camera.current == true:
 		if event is InputEventMouseMotion:
 			target_rotation.x -= event.relative.y * mouse_sensitivity
@@ -81,11 +126,11 @@ func _input(event):
 		elif event.is_action_released("ui_sprint"):
 			sprintPressed = false
 			
-		if event.is_action_pressed("ui_accept"):
+		if event.is_action_pressed("ui_jump"):
 			jumped = true
-		elif event.is_action_released("ui_accept"):
+		elif event.is_action_released("ui_jump"):
 			jumped = false
-			
+	
 	if event.is_action_pressed("do_trick") and current_trick != 0 and is_on_floor():
 		perform_trick(current_trick)
 		
@@ -113,27 +158,11 @@ func perform_trick(trickINT: int):
 		_:
 			print("Unknown trick:", trickINT)
 	
-func _ready():
-	add_to_group("player")
-	
-	if multiplayer.get_unique_id() == player_id:
-		camera.current = true
-	else:
-		camera.current = false
-	add_to_group("players")
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	spring_arm.add_excluded_object(self)
-	animTree.active = true
-	
-	floor_max_angle= deg_to_rad(60)
-	floor_snap_length= 3.0
-	
-	for area in get_tree().get_nodes_in_group("trick"):
-		area.connect("player_entered_trick_area", _on_trick_entered)
-		area.connect("player_exited_trick_area", _on_trick_exited)
-	
 
 func _on_animation_tree_animation_finished(anim_name):
+	if player_id != multiplayer.get_unique_id():
+		return
+		
 	if anim_name == "Vault":
 		trick=false
 		vault=false
@@ -158,9 +187,6 @@ func _on_trick_exited():
 	current_trick = 0
 	
 func _process(delta):
-	if not is_multiplayer_authority():
-		return
-	
 	if cancel_hang and is_hanging and not is_hang_climbing:
 		cameraControlled = true
 		is_hanging = false
@@ -168,6 +194,19 @@ func _process(delta):
 		trick = false
 	
 	current_direction = lerp(current_direction,input_dir,delta*DIRECTION_LERP_SPEED)
+	
+	if cameraControlled:
+		if is_on_floor() and velocity.length()>0.1:
+			var temp = spring_arm.global_rotation
+			global_rotation.y = move_toward_angle(
+				global_rotation.y,
+				target_rotation.y,
+				ROTATION_INTERPOLATION * delta
+			)
+			spring_arm.global_rotation = temp
+	else:
+		global_rotation.y = lerp_angle(global_rotation.y,forced_rotation.y,delta*5.0)
+	
 	animTree.set("parameters/StateMachine/BlendSpace2D/blend_position",Vector2(current_direction.x,-current_direction.y))
 	
 	animTree.set("parameters/StateMachine/conditions/isSliding",is_sliding)
@@ -186,21 +225,10 @@ func _process(delta):
 	animTree.set("parameters/StateMachine/TrickMachine/conditions/CancelHang",cancel_hang)
 	animTree.set("parameters/StateMachine/TrickMachine/conditions/isHanging",is_hanging)
 	animTree.set("parameters/StateMachine/TrickMachine/conditions/Vault",vault)
-	
-	if cameraControlled:
-		if is_on_floor() and velocity.length()>0.1:
-			var temp = spring_arm.global_rotation
-			global_rotation.y = move_toward_angle(
-				global_rotation.y,
-				target_rotation.y,
-				ROTATION_INTERPOLATION * delta
-			)
-			spring_arm.global_rotation = temp
-	else:
-		global_rotation.y = lerp_angle(global_rotation.y,forced_rotation.y,delta*5.0)
-	
 	camera.global_position = lerp(camera.global_position,cameraPositionNode.global_position,delta*10.0)
 	camera.look_at(spring_arm.global_position)
+	
+	savedCameraPos = camera.global_position
 	
 	#Scan for a wallgrab
 	if not is_on_floor() and not is_wall_running and not cancel_hang:
@@ -218,11 +246,7 @@ func move_toward_angle(current: float, target: float, max_delta: float) -> float
 	return current + step
 
 func _physics_process(delta):
-	
 	spring_arm.global_rotation.y = target_rotation.y
-	
-	if not is_multiplayer_authority():
-		return
 
 	if not is_on_floor() and not is_wall_running and not trick: 
 		velocity.y -= gravity * delta
@@ -248,6 +272,8 @@ func _physics_process(delta):
 		target_velocity.z = direction.z * speed
 		if sprinting and not is_wall_running:
 			target_velocity *= SPRINT_MULTIPLIER
+			if not raceFinished:
+				targetCameraFov = RUN_FOV
 		
 		is_jumping = false
 		is_falling = false
@@ -346,6 +372,9 @@ func _physics_process(delta):
 
 		
 	if is_sliding:
+		if not raceFinished:
+			targetCameraFov = SLIDE_FOV
+			
 		slide_timer -= delta
 		target_velocity *= 1.2  # Boost speed
 		
@@ -380,6 +409,14 @@ func _physics_process(delta):
 	else:
 		is_sliding = false
 		slide_target_scale_y = 1.0
+		if not raceFinished and not sprinting:
+			targetCameraFov = NORMAL_FOV
+	
+	
+	if not camera.fov == targetCameraFov:
+		camera.fov = lerp(camera.fov,targetCameraFov,delta*3.0)
+		if abs(camera.fov - targetCameraFov) < 0.3 :
+			camera.fov = targetCameraFov
 	
 	if abs(collision_shape.scale.y - slide_target_scale_y) > 0.05:
 		var current_y = collision_shape.scale.y
@@ -404,18 +441,32 @@ func _physics_process(delta):
 		is_falling = true
 
 	move_and_slide()
-	sync_position.rpc(global_position, velocity)
+	if is_multiplayer_authority():
+		sync_position.rpc(global_position, velocity)
 
 @rpc("unreliable")
 func sync_position(pos: Vector3, vel: Vector3):
 	global_position = pos
 	velocity = vel
-
-func setup_player(id: int,pos: Vector3):
-	player_id = id
-	name = str(id)
-	teleport_to(pos)
-	set_multiplayer_authority(id)
+	
+	animTree.set("parameters/StateMachine/BlendSpace2D/blend_position",Vector2(current_direction.x,-current_direction.y))
+	
+	animTree.set("parameters/StateMachine/conditions/isSliding",is_sliding)
+	animTree.set("parameters/StateMachine/conditions/notSliding",!is_sliding)
+	animTree.set("parameters/StateMachine/conditions/isFalling",is_falling)
+	animTree.set("parameters/StateMachine/conditions/notFalling",!is_falling)
+	animTree.set("parameters/StateMachine/conditions/isWallLeft",is_wall_running_left)
+	animTree.set("parameters/StateMachine/conditions/isNotWallLeft",!is_wall_running_left)
+	animTree.set("parameters/StateMachine/conditions/isWallRight",is_wall_running_right)
+	animTree.set("parameters/StateMachine/conditions/isNotWallRight",!is_wall_running_right)
+	animTree.set("parameters/StateMachine/conditions/FastRun",sprinting)
+	animTree.set("parameters/StateMachine/conditions/notFastRun",!sprinting)
+	animTree.set("parameters/StateMachine/conditions/Trick",trick)
+	animTree.set("parameters/StateMachine/conditions/notTrick",!trick)
+	
+	animTree.set("parameters/StateMachine/TrickMachine/conditions/CancelHang",cancel_hang)
+	animTree.set("parameters/StateMachine/TrickMachine/conditions/isHanging",is_hanging)
+	animTree.set("parameters/StateMachine/TrickMachine/conditions/Vault",vault)
 
 func teleport_to(pos: Vector3):
 	set_physics_process(false)
@@ -486,6 +537,7 @@ func setup_hang():
 	
 	cameraControlled = false
 	sprinting = false
+	sprintPressed = false
 	
 	velocity = Vector3.ZERO
 	
@@ -496,7 +548,7 @@ func setup_hang():
 	var hit_point = wallHangFrontRC.get_collision_point()
 	var hang_offset = wall_direction * 0.25  # Pull back from the wall a bit
 	
-	var top_y = find_obstacle_top(global_position, -wall_direction, 0,2.5)
+	var top_y = find_obstacle_top(global_position, -wall_direction, 1.5,2.5)
 	
 	var trickCheckpointNormalizedTimes = {1: 1.0,2: 1.0}
 	trickCheckpointCount = 2
@@ -507,7 +559,7 @@ func setup_hang():
 	trickCheckpoints[3] = hit_point  - (hang_offset *2)
 	trickCheckpoints[3].y = top_y
 	
-	trickAnimationSpeed = 0.3
+	trickAnimationSpeed = 1.5
 	
 	var anim_name = "WallHang"
 	var base_length = $AnimationPlayer.get_animation(anim_name).length
@@ -542,23 +594,24 @@ func perform_vault(delta):
 	trickTimer+=delta
 	
 func perform_hanging(delta):
-	$CollisionShape3D.disabled = true
-	global_position = lerp(global_position,trickCheckpoints[trickCheckpointCurrent],delta*3.0 * trickAnimationSpeed)
-	#global_position = global_position.move_toward(trickCheckpoints[trickCheckpointCurrent],delta*2.0 * trickAnimationSpeed )
-	if trickTimer > trickCheckpointTimers[trickCheckpointCurrent]:
-		trickCheckpointCurrent += 1
-		if trickCheckpointCurrent > trickCheckpointCount:
-			#trickCheckpointCurrent = 0
-			trickTimer = 0
-			trick = false
-			is_hanging = false
-			is_hang_climbing = false
-			cameraControlled = true
-			print("hanging timer end")
-			target_rotation.y = global_rotation.y
-			$CollisionShape3D.disabled = false
-			global_position = trickCheckpoints[3]
-	trickTimer+=delta
+	if is_multiplayer_authority():
+		$CollisionShape3D.disabled = true
+		global_position = lerp(global_position,trickCheckpoints[trickCheckpointCurrent],delta*3.0 * trickAnimationSpeed)
+		#global_position = global_position.move_toward(trickCheckpoints[trickCheckpointCurrent],delta*2.0 * trickAnimationSpeed )
+		if trickTimer > trickCheckpointTimers[trickCheckpointCurrent]:
+			trickCheckpointCurrent += 1
+			if trickCheckpointCurrent > trickCheckpointCount:
+				#trickCheckpointCurrent = 0
+				trickTimer = 0
+				trick = false
+				is_hanging = false
+				is_hang_climbing = false
+				cameraControlled = true
+				print("hanging timer end")
+				target_rotation.y = global_rotation.y
+				$CollisionShape3D.disabled = false
+				global_position = trickCheckpoints[3]
+		trickTimer+=delta
 
 func delayed_camera_enable(delay_time: float):
 	await get_tree().create_timer(delay_time).timeout

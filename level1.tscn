@@ -1,11 +1,26 @@
-[gd_scene load_steps=16 format=3 uid="uid://bf5gwq4g072dv"]
+[gd_scene load_steps=21 format=3 uid="uid://bf5gwq4g072dv"]
 
 [ext_resource type="Script" path="res://Level1.gd" id="1_rmp53"]
 [ext_resource type="Texture2D" uid="uid://bhyftyw65ea6u" path="res://Textures/industrial_sunset_02_puresky_2k.exr" id="2_pcu2a"]
-[ext_resource type="Texture2D" uid="uid://dpy78yp0062jp" path="res://Textures/asphalt_road_2.jpg" id="2_ylleg"]
-[ext_resource type="Texture2D" uid="uid://c6n4006eih0o5" path="res://Textures/asphalt_road_3.jpg" id="3_ugsj6"]
-[ext_resource type="Texture2D" uid="uid://uxijwjt5fkmw" path="res://Textures/brick_wall_10_diff_4k.jpg" id="4_4u7a2"]
-[ext_resource type="Script" path="res://Trick.gd" id="6_wux42"]
+[ext_resource type="Shader" path="res://level1.gdshader" id="4_o47j5"]
+[ext_resource type="Texture2D" uid="uid://53vjyocyupew" path="res://Checkered.jpg" id="5_beaj1"]
+[ext_resource type="PackedScene" uid="uid://v1bgwrqj7x28" path="res://lowpolyTDM.tscn" id="7_6un28"]
+[ext_resource type="FontFile" uid="uid://cyehx80qm2ey" path="res://Textures/VeniteAdoremus-rgRBA.ttf" id="8_pcmwk"]
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_fmrp7"]
+
+[sub_resource type="PackedScene" id="PackedScene_ajn8t"]
+_bundled = {
+"conn_count": 0,
+"conns": PackedInt32Array(),
+"editable_instances": [],
+"names": PackedStringArray("Tag", "offset_left", "offset_top", "offset_right", "offset_bottom", "texture", "expand_mode", "TextureRect"),
+"node_count": 1,
+"node_paths": [],
+"nodes": PackedInt32Array(-1, -1, 7, 0, -1, 6, 1, 0, 2, 0, 3, 1, 4, 1, 5, 2, 6, 3, 0),
+"variants": [-20.0, 20.0, SubResource("CompressedTexture2D_fmrp7"), 3],
+"version": 3
+}
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_cakns"]
 panorama = ExtResource("2_pcu2a")
@@ -19,264 +34,229 @@ sky = SubResource("Sky_6siw2")
 ambient_light_color = Color(1, 1, 1, 1)
 fog_light_color = Color(0.721569, 0.74902, 0.94902, 1)
 fog_density = 0.0015
+volumetric_fog_enabled = true
+volumetric_fog_density = 0.0235
+
+[sub_resource type="Curve3D" id="Curve3D_g5r5j"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 4.365, 0, 3.33, 0, 0, 0, 0, 0, 0, -56.6756, 9.44863, 5.55627, 0, 0, 0, 0, 0, 0, -56.85, 0.539, 73.974, 0, 0, 0, 0, 0, 0, -42.657, 0.042, 112.274, 0, 0, 0, 0, 0, 0, -26.3324, -3.41158, 124.738),
+"tilts": PackedFloat32Array(0, 0, 0, 0, 0)
+}
+point_count = 5
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_0j16p"]
 size = Vector3(1, 0.991699, 1)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v6ed3"]
-albedo_texture = ExtResource("2_ylleg")
-detail_enabled = true
-detail_albedo = ExtResource("3_ugsj6")
-uv1_scale = Vector3(0.055, 0.055, 0.055)
-uv1_triplanar = true
-uv1_world_triplanar = true
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_s7exd"]
+shader = ExtResource("4_o47j5")
+shader_parameter/edge_falloff = 0.11
+shader_parameter/base_alpha = 0.0
+shader_parameter/tex = ExtResource("5_beaj1")
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_xumgr"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_pmkmd"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_hfjte"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_xpv8q"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0rhd3"]
-albedo_texture = ExtResource("4_4u7a2")
-normal_enabled = true
-uv1_scale = Vector3(0.12, 0.12, 0.12)
-uv1_triplanar = true
-uv1_world_triplanar = true
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_4uqs7"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_gc3p7"]
-size = Vector3(6.9226, 1.43, 0.795)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_awm6g"]
+bg_color = Color(0, 0, 0, 0.2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jp4pv"]
+bg_color = Color(1, 1, 0.152941, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_mtxqw"]
 
 [node name="Level" type="Node3D"]
 script = ExtResource("1_rmp53")
+spawnabletag = SubResource("PackedScene_ajn8t")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.511564, 0.707531, -0.487548, -0.360842, 0.691854, 0.625405, 0.779805, -0.144007, 0.609234, 0, 25.5061, 0)
+transform = Transform3D(0.459417, 0.776898, -0.430541, -0.234985, 0.573762, 0.784589, 0.856573, -0.259283, 0.446156, 0, 25.5061, 0)
+light_color = Color(1, 1, 0.54902, 1)
+light_energy = 2.825
+shadow_enabled = true
+shadow_bias = 0.0
+directional_shadow_split_1 = 0.075
+directional_shadow_split_2 = 0.065
+directional_shadow_split_3 = 0.062
 directional_shadow_fade_start = 0.0
-directional_shadow_max_distance = 400.0
+directional_shadow_max_distance = 700.0
 directional_shadow_pancake_size = 0.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_l8c57")
 
 [node name="SpawnPoint" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 76.7163, -0.908458, -1.25212)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 150.84, -13.7346, -18.3125)
 
-[node name="LevelCheckpoints" type="Node3D" parent="."]
+[node name="RaceStartPoint" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 151.707, -20.9976, -23.1537)
 
-[node name="Checkpoint" type="Area3D" parent="LevelCheckpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -21.1765, 0.651362, -0.340206)
+[node name="RacePath" type="Node3D" parent="."]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="LevelCheckpoints/Checkpoint"]
+[node name="Path3D" type="Path3D" parent="RacePath"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 146.569, -17.1209, -25.8577)
+curve = SubResource("Curve3D_g5r5j")
+
+[node name="FinishLine" type="Area3D" parent="RacePath"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 119.17, -21.5945, 97.9332)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="RacePath/FinishLine"]
 transform = Transform3D(1, 0, 0, 0, 10, 0, 0, 0, 10, 0, 5, 0)
 shape = SubResource("BoxShape3D_0j16p")
 
-[node name="Checkpoint2" type="Area3D" parent="LevelCheckpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -45.7279, 0.651362, -0.340206)
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="LevelCheckpoints/Checkpoint2"]
-transform = Transform3D(1, 0, 0, 0, 10, 0, 0, 0, 10, 0, 5, 0)
-shape = SubResource("BoxShape3D_0j16p")
+[node name="UI" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="Checkpoint3" type="Area3D" parent="LevelCheckpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -75.0974, 0.651362, -0.340206)
+[node name="FinishCover" type="TextureRect" parent="CanvasLayer/UI"]
+material = SubResource("ShaderMaterial_s7exd")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("5_beaj1")
+expand_mode = 1
+stretch_mode = 1
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="LevelCheckpoints/Checkpoint3"]
-transform = Transform3D(1, 0, 0, 0, 10, 0, 0, 0, 10, 0, 5, 0)
-shape = SubResource("BoxShape3D_0j16p")
+[node name="Panel" type="Panel" parent="CanvasLayer/UI"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+grow_vertical = 2
 
-[node name="FinishLine" type="Area3D" parent="LevelCheckpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -102.383, 0.651362, -0.340206)
+[node name="Top Left" type="PanelContainer" parent="CanvasLayer/UI"]
+layout_mode = 1
+offset_top = 100.0
+offset_right = 182.0
+offset_bottom = 335.0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_pmkmd")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="LevelCheckpoints/FinishLine"]
-transform = Transform3D(1, 0, 0, 0, 10, 0, 0, 0, 10, 0, 5, 0)
-shape = SubResource("BoxShape3D_0j16p")
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/UI/Top Left"]
+layout_mode = 2
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
-[node name="StaticBody3D" type="StaticBody3D" parent="."]
-transform = Transform3D(30.5921, 0, 0, 0, 1, 0, 0, 0, 37.4429, 0.585896, -8.09608, 17.3682)
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/UI/Top Left/MarginContainer"]
+layout_mode = 2
 
-[node name="CSGPolygon3D" type="CSGPolygon3D" parent="StaticBody3D"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_v6ed3")
-polygon = PackedVector2Array(-1.11, -4.625, -0.51, 5.52, 1.125, 7.805, 1, -10.575)
+[node name="Label" type="Label" parent="CanvasLayer/UI/Top Left/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_pcmwk")
+text = "Race Positions:"
 
-[node name="CollisionPolygon3D" type="CollisionPolygon3D" parent="StaticBody3D"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, -0.496598)
-polygon = PackedVector2Array(-1.11, -4.625, -0.51, 5.52, 1.125, 7.805, 1, -10.575)
+[node name="RacePositions" type="VBoxContainer" parent="CanvasLayer/UI/Top Left/MarginContainer/VBoxContainer"]
+layout_mode = 2
 
-[node name="StaticBody3D16" type="StaticBody3D" parent="."]
-transform = Transform3D(12.6653, 0, 0, 0, 0.829485, 0, 0, 0, 15.5015, 51.2345, -8.63665, 17.3682)
+[node name="Top Center" type="PanelContainer" parent="CanvasLayer/UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -225.0
+offset_top = 20.0
+offset_right = 225.0
+offset_bottom = 89.985
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_xpv8q")
 
-[node name="CSGPolygon3D" type="CSGPolygon3D" parent="StaticBody3D16"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_v6ed3")
-polygon = PackedVector2Array(-1.11, -4.625, -0.51, 5.52, 1.125, 7.805, 1, -10.575)
+[node name="PanelContainer" type="PanelContainer" parent="CanvasLayer/UI/Top Center"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_4uqs7")
 
-[node name="CollisionPolygon3D" type="CollisionPolygon3D" parent="StaticBody3D16"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, -0.496598)
-polygon = PackedVector2Array(-1.11, -4.625, -0.51, 5.52, 1.125, 7.805, 1, -10.575)
+[node name="ProgressBar" type="ProgressBar" parent="CanvasLayer/UI/Top Center/PanelContainer"]
+custom_minimum_size = Vector2(0, 8.96)
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_styles/background = SubResource("StyleBoxFlat_awm6g")
+theme_override_styles/fill = SubResource("StyleBoxFlat_jp4pv")
+show_percentage = false
 
-[node name="StaticBody3D12" type="StaticBody3D" parent="."]
-transform = Transform3D(69.624, 0, 0, 0, 1, 0, 0, 0, 30.254, 53.9704, -12.3945, 1.29489)
+[node name="MapProgress" type="Label" parent="CanvasLayer/UI/Top Center/PanelContainer"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_fonts/font = ExtResource("8_pcmwk")
+text = "Map progress:"
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D12"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_v6ed3")
+[node name="Top Right" type="PanelContainer" parent="CanvasLayer/UI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -175.105
+offset_top = 100.0
+offset_bottom = 188.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxEmpty_mtxqw")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D12"]
-shape = SubResource("BoxShape3D_xumgr")
+[node name="MarginContainer" type="MarginContainer" parent="CanvasLayer/UI/Top Right"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
 
-[node name="StaticBody3D13" type="StaticBody3D" parent="."]
-transform = Transform3D(69.624, 0, 0, 0, 19.3247, 0, 0, 0, 30.254, 90.8344, -11.7672, 1.29489)
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/UI/Top Right/MarginContainer"]
+layout_mode = 2
 
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D13"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_v6ed3")
+[node name="Laptime" type="Label" parent="CanvasLayer/UI/Top Right/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_pcmwk")
+theme_override_font_sizes/font_size = 12
+text = "Laptime: "
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D13"]
-shape = SubResource("BoxShape3D_xumgr")
+[node name="LapTimer" type="Label" parent="CanvasLayer/UI/Top Right/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_pcmwk")
+text = "00:00:00.000"
 
-[node name="StaticBody3D2" type="StaticBody3D" parent="."]
-transform = Transform3D(18.3133, 0, 0, 0, 1, 0, 0, 0, 37.4429, -76.6732, -13.5634, 17.3682)
+[node name="WR" type="Label" parent="CanvasLayer/UI/Top Right/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_pcmwk")
+theme_override_font_sizes/font_size = 12
+text = "World Record:"
 
-[node name="CSGPolygon3D" type="CSGPolygon3D" parent="StaticBody3D2"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_v6ed3")
-polygon = PackedVector2Array(-1.11, -4.625, -0.51, 5.52, 1.125, 7.805, 1, -10.575)
+[node name="WRTimer" type="Label" parent="CanvasLayer/UI/Top Right/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_pcmwk")
+text = "00:00:00.000"
 
-[node name="CollisionPolygon3D" type="CollisionPolygon3D" parent="StaticBody3D2"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, -0.496598)
-polygon = PackedVector2Array(-1.11, -4.625, -0.51, 5.52, 1.125, 7.805, 1, -10.575)
+[node name="PlayerTags" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -225.0
+offset_right = 225.0
+offset_bottom = 74.47
+grow_horizontal = 2
 
-[node name="StaticBody3D11" type="StaticBody3D" parent="."]
-transform = Transform3D(159.284, 0, 0, 0, 1, 0, 0, 0, 37.4429, -93.7289, -12.2088, 0)
+[node name="MyTag" type="Control" parent="CanvasLayer"]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -225.0
+offset_right = 225.0
+offset_bottom = 74.47
+grow_horizontal = 2
 
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D11"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_v6ed3")
+[node name="Sketchfab_Scene" parent="." instance=ExtResource("7_6un28")]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 119.169, -21.3035, 49.5914)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D11"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D3" type="StaticBody3D" parent="."]
-transform = Transform3D(324.233, 0, 0, 0, 25, 0, 0, 0, 1, -61.556, 0, -11.991)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D3"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D3"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D5" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 2.705, 0, 0, 0, 20, -13.0795, 3.44426, -0.970158)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D5"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D5"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D14" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 2.705, 0, 0, 0, 21.4875, 83.0481, 0.610727, -0.970158)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D14"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D14"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D15" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 2.705, 0, 0, 0, 21.4875, 68.5797, -1.93643, -0.970158)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D15"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D15"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="Trick" type="Area3D" parent="StaticBody3D15"]
-disable_mode = 2
-script = ExtResource("6_wux42")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D15/Trick"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.7029, 0, 0)
-shape = SubResource("BoxShape3D_gc3p7")
-
-[node name="StaticBody3D7" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 5.53727, 0, 0, 0, 20, -43.5464, -7.16504, -0.970158)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D7"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D7"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D10" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 5.53727, 0, 0, 0, 20, -102.947, 0.711045, -1.03652)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D10"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D10"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D8" type="StaticBody3D" parent="."]
-transform = Transform3D(-2.40749, 0, 0, 0, 5.53727, 0, 0, 0, 23.4117, -62.2028, -0.878574, -1.97138)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D8"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D8"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D9" type="StaticBody3D" parent="."]
-transform = Transform3D(11.1264, 0, 0, 0, 5.53727, 0, 0, 0, 5.59502, -80.5132, 3.12771, -3.29398)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D9"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D9"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D6" type="StaticBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 2.705, 0, 0, 0, 20, -33.4779, -7.8519, -0.970158)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D6"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D6"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="StaticBody3D4" type="StaticBody3D" parent="."]
-transform = Transform3D(333.763, 0, 0, 0, 25, 0, 0, 0, 1, -65.3832, 0, 8.977)
-collision_layer = 9
-
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D4"]
-transform = Transform3D(0.999999, 0.0014755, -0.000171762, -0.00147581, 0.999997, -0.00182882, 0.000169063, 0.00182907, 0.999998, 0, 0, 0)
-material_override = SubResource("StandardMaterial3D_0rhd3")
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D4"]
-shape = SubResource("BoxShape3D_hfjte")
-
-[node name="TimerLabel" type="Label" parent="."]
-offset_right = 40.0
-offset_bottom = 23.0
-
-[connection signal="body_entered" from="StaticBody3D15/Trick" to="StaticBody3D15/Trick" method="_on_body_entered"]
-[connection signal="body_exited" from="StaticBody3D15/Trick" to="StaticBody3D15/Trick" method="_on_body_exited"]
+[node name="Node3D" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.87, 0.07, 3.34)

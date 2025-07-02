@@ -1,4 +1,4 @@
-[gd_resource type="AnimationNodeBlendTree" load_steps=58 format=3 uid="uid://wuavk86ydayw"]
+[gd_resource type="AnimationNodeBlendTree" load_steps=59 format=3 uid="uid://wuavk86ydayw"]
 
 [sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_j1hef"]
 animation = &"Fire"
@@ -164,7 +164,7 @@ advance_mode = 2
 advance_condition = &"notSliding"
 
 [sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_brhvo"]
-xfade_time = 0.1
+xfade_time = 0.2
 advance_mode = 2
 advance_condition = &"isFalling"
 
@@ -253,13 +253,19 @@ advance_condition = &"isWallRight"
 advance_mode = 2
 advance_condition = &"Trick"
 
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_y6y5y"]
+xfade_time = 0.2
+priority = 2
+advance_mode = 2
+advance_condition = &"isFalling"
+
 [sub_resource type="AnimationNodeStateMachine" id="AnimationNodeStateMachine_mgll2"]
 allow_transition_to_self = true
 states/BlendSpace2D/node = SubResource("AnimationNodeBlendSpace2D_y5iy6")
-states/BlendSpace2D/position = Vector2(575, 0)
+states/BlendSpace2D/position = Vector2(575, -5)
 states/End/position = Vector2(1233, 128)
 states/FallingIdle(1)0/node = SubResource("AnimationNodeAnimation_ri3li")
-states/FallingIdle(1)0/position = Vector2(884, 83)
+states/FallingIdle(1)0/position = Vector2(884, 109)
 states/FastRun/node = SubResource("AnimationNodeAnimation_2hh0d")
 states/FastRun/position = Vector2(524, 144)
 states/Slide/node = SubResource("AnimationNodeAnimation_bvcun")
@@ -271,11 +277,11 @@ states/WallLeft/node = SubResource("AnimationNodeAnimation_bpjqu")
 states/WallLeft/position = Vector2(739, -78)
 states/WallRight/node = SubResource("AnimationNodeAnimation_sivst")
 states/WallRight/position = Vector2(884, -50)
-transitions = ["Start", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_0yq41"), "FallingIdle(1)0", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_i2qiq"), "BlendSpace2D", "Slide", SubResource("AnimationNodeStateMachineTransition_4ij5l"), "Slide", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_k0d0a"), "BlendSpace2D", "FallingIdle(1)0", SubResource("AnimationNodeStateMachineTransition_brhvo"), "BlendSpace2D", "WallLeft", SubResource("AnimationNodeStateMachineTransition_8xbsu"), "BlendSpace2D", "WallRight", SubResource("AnimationNodeStateMachineTransition_fk41w"), "WallLeft", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_75mj1"), "WallRight", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_jb3w1"), "FallingIdle(1)0", "WallRight", SubResource("AnimationNodeStateMachineTransition_8a3xu"), "FallingIdle(1)0", "WallLeft", SubResource("AnimationNodeStateMachineTransition_ruxk7"), "WallLeft", "FallingIdle(1)0", SubResource("AnimationNodeStateMachineTransition_lf4dd"), "WallRight", "FallingIdle(1)0", SubResource("AnimationNodeStateMachineTransition_gnofq"), "BlendSpace2D", "FastRun", SubResource("AnimationNodeStateMachineTransition_f21q0"), "FastRun", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_b3tpp"), "FastRun", "Slide", SubResource("AnimationNodeStateMachineTransition_phws1"), "BlendSpace2D", "TrickMachine", SubResource("AnimationNodeStateMachineTransition_yy08x"), "TrickMachine", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_an4gy"), "FastRun", "TrickMachine", SubResource("AnimationNodeStateMachineTransition_c22h3"), "Slide", "TrickMachine", SubResource("AnimationNodeStateMachineTransition_sygud"), "FastRun", "WallLeft", SubResource("AnimationNodeStateMachineTransition_babxe"), "FastRun", "WallRight", SubResource("AnimationNodeStateMachineTransition_pqexh"), "FallingIdle(1)0", "TrickMachine", SubResource("AnimationNodeStateMachineTransition_2f4bu")]
-graph_offset = Vector2(-220.765, -208)
+transitions = ["Start", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_0yq41"), "FallingIdle(1)0", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_i2qiq"), "BlendSpace2D", "Slide", SubResource("AnimationNodeStateMachineTransition_4ij5l"), "Slide", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_k0d0a"), "BlendSpace2D", "FallingIdle(1)0", SubResource("AnimationNodeStateMachineTransition_brhvo"), "BlendSpace2D", "WallLeft", SubResource("AnimationNodeStateMachineTransition_8xbsu"), "BlendSpace2D", "WallRight", SubResource("AnimationNodeStateMachineTransition_fk41w"), "WallLeft", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_75mj1"), "WallRight", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_jb3w1"), "FallingIdle(1)0", "WallRight", SubResource("AnimationNodeStateMachineTransition_8a3xu"), "FallingIdle(1)0", "WallLeft", SubResource("AnimationNodeStateMachineTransition_ruxk7"), "WallLeft", "FallingIdle(1)0", SubResource("AnimationNodeStateMachineTransition_lf4dd"), "WallRight", "FallingIdle(1)0", SubResource("AnimationNodeStateMachineTransition_gnofq"), "BlendSpace2D", "FastRun", SubResource("AnimationNodeStateMachineTransition_f21q0"), "FastRun", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_b3tpp"), "FastRun", "Slide", SubResource("AnimationNodeStateMachineTransition_phws1"), "BlendSpace2D", "TrickMachine", SubResource("AnimationNodeStateMachineTransition_yy08x"), "TrickMachine", "BlendSpace2D", SubResource("AnimationNodeStateMachineTransition_an4gy"), "FastRun", "TrickMachine", SubResource("AnimationNodeStateMachineTransition_c22h3"), "Slide", "TrickMachine", SubResource("AnimationNodeStateMachineTransition_sygud"), "FastRun", "WallLeft", SubResource("AnimationNodeStateMachineTransition_babxe"), "FastRun", "WallRight", SubResource("AnimationNodeStateMachineTransition_pqexh"), "FallingIdle(1)0", "TrickMachine", SubResource("AnimationNodeStateMachineTransition_2f4bu"), "FastRun", "FallingIdle(1)0", SubResource("AnimationNodeStateMachineTransition_y6y5y")]
+graph_offset = Vector2(-200.765, -20)
 
 [resource]
-graph_offset = Vector2(-203.111, 92.6386)
+graph_offset = Vector2(-1390.95, 89.2235)
 nodes/Animation/node = SubResource("AnimationNodeAnimation_j1hef")
 nodes/Animation/position = Vector2(740, 240)
 nodes/FireShot/node = SubResource("AnimationNodeOneShot_2ivvj")

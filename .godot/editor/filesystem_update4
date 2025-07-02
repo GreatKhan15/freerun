@@ -1,6 +1,8 @@
-res://main_scene.tscn
+res://level1.tscn
+res://Level1.gd
 res://main_scene.gd
 res://CattyAnimTree.tres
-res://level1.tscn
+res://main_scene.tscn
 res://Catty.tscn
 res://Player.gd
+res://level1.gdshader
