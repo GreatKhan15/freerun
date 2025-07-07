@@ -11,8 +11,10 @@ extends CharacterBody3D
 @onready var wallHangUpperRC : RayCast3D = $WallHangUpperRayCast
 @onready var wallHangFrontRC : RayCast3D = $WallHangFrontRayCast
 @onready var wallHangUnderRC : RayCast3D = $WallHangUnderRayCast
+@onready var skeleton = $Armature/Skeleton3D
 
 @export var player_id : int
+@export var player_nick : String
 
 var slide_timer: float = 0.0
 var wall_normal: Vector3 = Vector3.ZERO
@@ -31,6 +33,7 @@ var trickTimer = 0.0
 var trickAnimationSpeed = 1
 var currentAnimation = "Idle"
 var savedCameraPos = Vector3(0,0,0)
+var smoothCameraLook = false
 
 var speed: float = 7.0
 var jump_strength: float = 8.5
@@ -41,16 +44,20 @@ var VELOCITY_INTERPOLATION_GROUND = 15.0
 var VELOCITY_INTERPOLATION_AIR = 0.5
 var WALLRUN_ANTIGRAVITY = 0.1
 var SPRINT_MULTIPLIER = 1.3
+var KICK_VELOCITY = 22.0
 var ROTATION_INTERPOLATION = 3.0
 var BOUNCE_STRENGTH = 8.5
 var ACCELERATION_RATE = 3.0
 var BRAKE_RATE = 6.0
 var WALLRUN_SPEED = 9.0
 var NORMAL_FOV = 50.0
-var SLIDE_FOV = 75.0
-var RUN_FOV = 65.0
-var WIN_FOV = 85.0
-var CAMERA_WIN_DISTANCE = 7.0
+var SLIDE_FOV = NORMAL_FOV + 20.0
+var RUN_FOV = NORMAL_FOV + 15.0
+var WIN_FOV = NORMAL_FOV + 25.0
+var KICK_FOV = NORMAL_FOV + 40.0
+var CAMERA_WIN_DISTANCE = 9.0
+var MIN_CAMERA_ZOOM = 1.0
+var MAX_CAMERA_ZOOM = 8.0
 @export var raceprogress = 0.0
 var targetCameraFov = NORMAL_FOV
 
@@ -71,6 +78,9 @@ var sprintPressed = false
 @export var trick = false
 @export var raceStarted = false
 @export var raceFinished = false
+var kickAttack = false
+var kicking = false
+var in_menu = false
 
 @export var direction : Vector3
 @export var current_direction : Vector2
@@ -110,37 +120,41 @@ func _ready():
 func _input(event):
 	if player_id != multiplayer.get_unique_id():
 		return
+	
+	if not in_menu:
+		if event.is_action_pressed("ui_jump"):
+			jumped = true
+		elif event.is_action_pressed("ui_crouch"):
+			if is_hanging:
+				cancel_hang = true
+			if is_on_floor() and input_dir.length() > 0 and not is_sliding:
+				is_sliding = true
+				slide_timer = slide_time
+				slide_target_scale_y = 0.3
+		elif event.is_action_pressed("ui_kick") and is_on_floor():
+			kickAttack = true
+		elif event.is_action_pressed("do_trick") and current_trick != 0 and is_on_floor():
+			perform_trick(current_trick)
+			
+		if event.is_action_pressed("ui_sprint") and not trick:
+			sprintPressed = true
+		elif event.is_action_released("ui_sprint"):
+			sprintPressed = false
 		
-	if event.is_action_pressed("ui_cancel"):
-		get_tree().quit()
+		if event.is_action_pressed("ui_cameramode"):
+			smoothCameraLook = !smoothCameraLook
 		
-	if camera.current == true:
 		if event is InputEventMouseMotion:
 			target_rotation.x -= event.relative.y * mouse_sensitivity
 			target_rotation.x = clamp(target_rotation.x, deg_to_rad(-89), deg_to_rad(70))
 			spring_arm.rotation.x = target_rotation.x
 			target_rotation.y -= event.relative.x * mouse_sensitivity
-	if event is InputEventKey and not trick:
-		if event.is_action_pressed("ui_sprint"):
-			sprintPressed = true
-		elif event.is_action_released("ui_sprint"):
-			sprintPressed = false
-			
-		if event.is_action_pressed("ui_jump"):
-			jumped = true
-		elif event.is_action_released("ui_jump"):
-			jumped = false
+		elif event is InputEventMouseButton and Input.is_mouse_button_pressed(MOUSE_BUTTON_WHEEL_DOWN):
+			spring_arm.spring_length += 0.2
+		elif event is InputEventMouseButton and Input.is_mouse_button_pressed(MOUSE_BUTTON_WHEEL_UP):
+			spring_arm.spring_length -= 0.2
 	
-	if event.is_action_pressed("do_trick") and current_trick != 0 and is_on_floor():
-		perform_trick(current_trick)
-		
-	if Input.is_action_just_pressed("ui_crouch"):
-		if is_hanging:
-			cancel_hang = true
-		if is_on_floor() and input_dir.length() > 0 and not is_sliding:
-			is_sliding = true
-			slide_timer = slide_time
-			slide_target_scale_y = 0.3
+	spring_arm.spring_length = clamp(spring_arm.spring_length,MIN_CAMERA_ZOOM,MAX_CAMERA_ZOOM)
 
 func perform_trick(trickINT: int):
 	match trickINT:
@@ -166,17 +180,21 @@ func _on_animation_tree_animation_finished(anim_name):
 	if anim_name == "Vault":
 		trick=false
 		vault=false
-	if anim_name == "Vault2":
+	elif anim_name == "Vault2":
 		trick=false
 		vault=false
-	if anim_name == "WallHang":
+	elif anim_name == "WallHang":
 		is_hang_climbing = true
-	if anim_name == "WallHangClimb":
+	elif anim_name == "WallHangClimb":
 		trick=false
 		is_hang_climbing = false
 		is_hanging = false
 		cameraControlled = true
-		global_position = trickCheckpoints[3]
+	elif anim_name == "FrontKick":
+		kickAttack = false
+		is_falling = true
+		kicking = false
+		targetCameraFov = NORMAL_FOV
 
 
 func _on_trick_entered(trick: int, obs):
@@ -192,7 +210,7 @@ func _process(delta):
 		is_hanging = false
 		is_falling = true
 		trick = false
-	
+		
 	current_direction = lerp(current_direction,input_dir,delta*DIRECTION_LERP_SPEED)
 	
 	if cameraControlled:
@@ -225,10 +243,35 @@ func _process(delta):
 	animTree.set("parameters/StateMachine/TrickMachine/conditions/CancelHang",cancel_hang)
 	animTree.set("parameters/StateMachine/TrickMachine/conditions/isHanging",is_hanging)
 	animTree.set("parameters/StateMachine/TrickMachine/conditions/Vault",vault)
-	camera.global_position = lerp(camera.global_position,cameraPositionNode.global_position,delta*10.0)
-	camera.look_at(spring_arm.global_position)
 	
+	if smoothCameraLook:
+		var skeleton = $Armature/Skeleton3D
+		var bone_idx = skeleton.find_bone("mixamorig_Hips")
+		var local_bone_transform = skeleton.get_bone_global_pose(bone_idx)
+		var global_bone_pos = skeleton.to_global(local_bone_transform.origin)
+		var camera_pos = camera.global_transform.origin
+		# Current forward vector
+		var current_basis = camera.global_transform.basis
+		var target_basis := Basis().looking_at(global_bone_pos - camera_pos, Vector3.UP)
+		# Smoothly interpolate rotation basis (SLERP)
+		var smoothed_basis = current_basis.slerp(target_basis, delta * 15.0)
+
+		camera.global_transform = Transform3D(smoothed_basis, camera_pos)
+		
+	else:
+		camera.look_at(spring_arm.global_position)
+	
+	camera.global_position = lerp(camera.global_position,cameraPositionNode.global_position,delta*10.0)
 	savedCameraPos = camera.global_position
+	
+	if kickAttack and is_on_floor() and not kicking:
+		#Perform Kick
+		kicking = true
+		velocity = -transform.basis.z * KICK_VELOCITY
+		velocity.y = 5.0
+		animTree.set("parameters/KickShot/request",AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+		targetCameraFov = KICK_FOV
+	
 	
 	#Scan for a wallgrab
 	if not is_on_floor() and not is_wall_running and not cancel_hang:
@@ -252,9 +295,10 @@ func _physics_process(delta):
 		velocity.y -= gravity * delta
 		is_falling = true
 
-	input_dir = Vector2.ZERO
-	input_dir.x = Input.get_axis("ui_left", "ui_right")
-	input_dir.y = Input.get_axis("ui_up", "ui_down")
+	if not in_menu:
+		input_dir = Vector2.ZERO
+		input_dir.x = Input.get_axis("ui_left", "ui_right")
+		input_dir.y = Input.get_axis("ui_up", "ui_down")
 	
 	if sprintPressed:
 		input_dir.x = 0
@@ -318,6 +362,9 @@ func _physics_process(delta):
 			delayed_camera_enable(1.0)
 			
 			animTree.set("parameters/JumpShot/request",AnimationNodeOneShot.ONE_SHOT_REQUEST_FIRE)
+		else:
+			#No jumping to do, cancel it
+			jumped = false
 	
 	# Wall Run
 	if not is_wall_running and not is_on_floor():
@@ -412,7 +459,12 @@ func _physics_process(delta):
 		if not raceFinished and not sprinting:
 			targetCameraFov = NORMAL_FOV
 	
-	
+	if kicking:
+		targetCameraFov = KICK_FOV
+	if raceFinished:
+		targetCameraFov = WIN_FOV
+		spring_arm.spring_length = CAMERA_WIN_DISTANCE
+		
 	if not camera.fov == targetCameraFov:
 		camera.fov = lerp(camera.fov,targetCameraFov,delta*3.0)
 		if abs(camera.fov - targetCameraFov) < 0.3 :
@@ -553,13 +605,13 @@ func setup_hang():
 	var trickCheckpointNormalizedTimes = {1: 1.0,2: 1.0}
 	trickCheckpointCount = 2
 	trickCheckpoints[1] = hit_point + hang_offset
-	trickCheckpoints[1].y = top_y - 2.35
+	trickCheckpoints[1].y = top_y
 	trickCheckpoints[2] = hit_point
-	trickCheckpoints[2].y = top_y - 2.25
+	trickCheckpoints[2].y = top_y
 	trickCheckpoints[3] = hit_point  - (hang_offset *2)
 	trickCheckpoints[3].y = top_y
 	
-	trickAnimationSpeed = 1.5
+	trickAnimationSpeed = 1.8
 	
 	var anim_name = "WallHang"
 	var base_length = $AnimationPlayer.get_animation(anim_name).length
@@ -596,7 +648,7 @@ func perform_vault(delta):
 func perform_hanging(delta):
 	if is_multiplayer_authority():
 		$CollisionShape3D.disabled = true
-		global_position = lerp(global_position,trickCheckpoints[trickCheckpointCurrent],delta*3.0 * trickAnimationSpeed)
+		global_position = lerp(global_position,trickCheckpoints[trickCheckpointCurrent],delta*7.0 * trickAnimationSpeed)
 		#global_position = global_position.move_toward(trickCheckpoints[trickCheckpointCurrent],delta*2.0 * trickAnimationSpeed )
 		if trickTimer > trickCheckpointTimers[trickCheckpointCurrent]:
 			trickCheckpointCurrent += 1
@@ -607,7 +659,6 @@ func perform_hanging(delta):
 				is_hanging = false
 				is_hang_climbing = false
 				cameraControlled = true
-				print("hanging timer end")
 				target_rotation.y = global_rotation.y
 				$CollisionShape3D.disabled = false
 				global_position = trickCheckpoints[3]

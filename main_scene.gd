@@ -13,6 +13,11 @@ var SERVER_IP = "127.0.0.1"
 var map_instance
 var my_player
 var raceStarted = false
+var editingName = false
+var holdChat = false
+
+@onready var profilePicCont = %ProfilePicContainer
+@onready var profileFrameCont = %ProfileFrameContainer
 
 func _input(event):
 	if event is InputEventKey:
@@ -24,30 +29,111 @@ func _input(event):
 				#Start Race
 				if not raceStarted:
 					start_race()
-				
-	if Input.is_action_just_pressed("ui_enter"):
-		print("Enter")
-		%Say.visible = !%Say.visible
-		if %Say.visible:
-			%MessagesBox.show()
-			%MessagesDisapearTimer.stop()
-		else:
-			%MessagesDisapearTimer.start()
-			
-		if %Say.text != "" and not %Say.visible:
-			send_message.rpc(multiplayer.get_unique_id(), %Say.text)
-			%Say.text = ""
+		elif event.is_action_pressed("ui_enter"):
+			if editingName:
+				editingName = false
+				%NameEdit.editable = false
+				$CanvasLayer/TopRight/ProfilePanel/Panel/VBoxContainer/HBoxContainer3/EditName.text = "Edit"
+				PlayerProfile.change_nick(%NameEdit.text)
+			else:
+				if %Say.text != "" and %Say.visible:
+					send_message.rpc(multiplayer.get_unique_id(), %Say.text)
+					%Say.text = ""
+					if not holdChat:
+						%Say.visible = !%Say.visible
+						if my_player:
+							my_player.in_menu = false
+							Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+					await get_tree().process_frame
+					%ScrollContainer.scroll_vertical = %ScrollContainer.get_v_scroll_bar().max_value
+				elif %Say.visible and %Say.text == "":
+					holdChat = false
+					%Say.visible = false
+					if my_player:
+						my_player.in_menu = false
+						Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+				else:
+					%Say.visible = !%Say.visible
+					if %Say.visible:
+						if my_player:
+							my_player.in_menu = true
+							Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+						if Input.is_key_pressed(KEY_CTRL):
+							holdChat = true
+						%Say.grab_focus()
+						%MessagesBox.show()
+						%MessagesDisapearTimer.stop()
+					else:
+						%MessagesDisapearTimer.start()
+		elif event.is_action_pressed("ui_escape"):
+			if %Say.visible:
+				%Say.visible = false
+				%Say.text = ""
+				holdChat = false
+			else:
+				toggle_esc_menu()
+		
+func toggle_esc_menu():
+	var menu = %ESCMenu
+
+	var menu2 = %ProfilePanel
+	var end_pos = Vector2(-menu2.size.x, 160)  # Where it should appear
+	var start_pos = Vector2(0,160 )
+	
+	if menu.visible:
+		if my_player:
+			my_player.in_menu = false
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		var tween = create_tween()
+		tween.tween_property(menu, "modulate:a", 0.0, 0.1)
+		tween.tween_property(menu, "scale", Vector2(0.9, 0.9), 0.1)
+		tween.connect("finished", Callable(self, "_on_menu_hidden"))
+		var tween2 = create_tween()
+		tween2.tween_property(menu2, "position", start_pos, 0.1).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	else:
+		if my_player:
+			my_player.in_menu = true
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		menu.modulate.a = 0.0
+		menu.scale = Vector2(0.9, 0.9)
+		menu.visible = true
+
+		var tween = create_tween()
+		tween.tween_property(menu, "modulate:a", 1.0, 0.1)
+		tween.tween_property(menu, "scale", Vector2(1, 1), 0.1)
+		
+		menu2.position = start_pos
+		menu2.visible = true
+		var tween2 = create_tween()
+		tween2.tween_property(menu2, "position", end_pos, 0.1).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+func _on_menu_hidden():
+	%ESCMenu.visible = false
+	%ProfilePanel.visible = false
 
 func _ready() -> void:
 
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	_on_viewport_size_changed()
+	
+	PlayerProfile.matches_updated.connect(_on_matches_updated)
+	PlayerProfile.pic_updated.connect(_on_profile_pic_updated)
+	
+	%NameEdit.text = PlayerProfile.get_nick()
+	%ProfilePicContainer.texture = load("res://Textures/ProfilePics/ProfilePic%s.png"%PlayerProfile.get_profile_pic())
+	%ProfileFrameContainer.texture = load("res://Textures/ProfileFrames/Frame%s.png"%PlayerProfile.get_profile_frame())
+	%MatchesCounter.text = str(PlayerProfile.get_matches())
 
 func _on_viewport_size_changed():
-	%Say.size.x = get_viewport().size.x / 2
-	%Say.position.x = get_viewport().size.x / 4
+	%Say.size.x = get_viewport().size.x / 3
+	%Say.position.x = get_viewport().size.x / 3
 	%Say.position.y = (get_viewport().size.y / 4) * 3
 
+func _on_matches_updated():
+	%MatchesCounter.text = str(PlayerProfile.get_matches())
+func _on_profile_pic_updated():
+	%ProfilePicContainer.texture = load("res://Textures/ProfilePics/ProfilePic%s.png"%PlayerProfile.get_profile_pic())
+	%ProfileFrameContainer.texture = load("res://Textures/ProfileFrames/Frame%s.png"%PlayerProfile.get_profile_frame())
 
 func _process(delta: float) -> void:
 	pass
@@ -61,13 +147,11 @@ func _on_host_button_pressed() -> void:
 	multiplayer.peer_disconnected.connect(del_player)
 	load_game()
 
-	#%Server.show()
-
 func _on_join_button_pressed() -> void:	
 	var client_peer = ENetMultiplayerPeer.new()
 	client_peer.create_client(SERVER_IP,SERVER_PORT)
 	
-	multiplayer.multiplayer_peer = client_peer	
+	multiplayer.multiplayer_peer = client_peer
 	multiplayer.connected_to_server.connect(load_game)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 	multiplayer.connection_failed.connect(_on_connection_failed)
@@ -92,9 +176,12 @@ func _del_player(id):
 	
 
 func load_game():	
-	%Menu.hide()
+	%Lobby.hide()
+	%ConnectMenu.hide()
 	map_instance = map.instantiate()
 	%Map.add_child(map_instance)
+	%EditName.disabled = true
+	%ChangeProfilePic.disabled = true
 	
 	for child in map_instance.get_children():
 		if child.name.begins_with("Spawn"):
@@ -107,6 +194,7 @@ func load_game():
 	else:
 		spawn_request.rpc_id(1,multiplayer.get_unique_id())
 	
+	
 @rpc("any_peer")
 func spawn_request(id):
 	_spawn_this.rpc(id)
@@ -116,13 +204,17 @@ func _spawn_this(id):
 	var playerToAdd = playerScene.instantiate()
 	playerToAdd.name = str(id)
 	playerToAdd.player_id = id
+	if raceStarted:
+		playerToAdd.raceStarted = true
+		map_instance.position_start.rpc_id(id,spawnPosition)
+		map_instance.setup_race(playerToAdd)
 	playerToAdd.set_multiplayer_authority(id)
 	$Players.add_child(playerToAdd)
 	playerToAdd.global_position = spawnPosition
 	if multiplayer.get_unique_id() == id:
 		my_player = playerToAdd
+		my_player.player_nick = PlayerProfile.get_nick()
 		map_instance.my_player = my_player
-		
 	map_instance.add_marker(id)
 
 func start_race():
@@ -143,8 +235,7 @@ func _on_connection_failed():
 
 func _on_server_disconnected():
 	print("Server DC %s" % multiplayer.get_unique_id())	
-	%Menu.show()
-	%Lobby.hide()
+	%ConnectMenu.show()
 
 	for child in %Map.get_children():
 		child.queue_free()
@@ -158,20 +249,48 @@ func _on_server_disconnected():
 func send_message(id, message):
 	%MessagesBox.show()
 	var label = Label.new()
-	label.modulate = Color(1, 0.75, 0)
-	if id == 1:
-		label.modulate = Color.GREEN
-		label.text = "SERVER: " + message
+	label.modulate = Color(1, 1, 1)
+	if my_player:
+		if id == my_player.player_id:
+			label.modulate = Color.CYAN
+			label.text = "%s : %s" %[PlayerProfile.player_nick, message]
+		else:
+			label.text = str(id) + " : " + message
+	elif multiplayer.multiplayer_peer is OfflineMultiplayerPeer:
+		label.text = "Offline : " + message
 	else:
-		label.text = str(id) + ": " + message
-	%Messages.get_child(0).queue_free()
+		label.text = str(id) + " : " + message
 	%Messages.add_child(label)
 	%MessagesDisapearTimer.start()
 
-
-func _on_enter_button_pressed() -> void:
-	%Lobby.hide()
-
-
 func _on_messages_disapear_timer_timeout() -> void:
 	%MessagesBox.hide()
+
+
+func _on_edit_name_pressed():
+	if editingName:
+		editingName = false
+		%NameEdit.editable = false
+		$CanvasLayer/TopRight/ProfilePanel/Panel/VBoxContainer/HBoxContainer3/EditName.text = "Edit"
+		PlayerProfile.change_nick(%NameEdit.text)
+	else:
+		editingName = true
+		%NameEdit.editable = true
+		%NameEdit.grab_focus()
+		$CanvasLayer/TopRight/ProfilePanel/Panel/VBoxContainer/HBoxContainer3/EditName.text = "Confirm"
+
+
+func _on_resume_button_pressed():
+	toggle_esc_menu()
+
+func _on_options_button_pressed():
+	pass
+
+func _on_exit_button_pressed():
+	get_tree().quit()
+
+
+func _on_change_profile_pic_pressed():
+	%ProfilePicEditPanel.visible = true
+	%TestPic.visible = true
+	%TestFrame.visible = true

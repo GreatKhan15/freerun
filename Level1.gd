@@ -68,7 +68,7 @@ func _process(delta):
 				player.add_child(playerLabel)
 			if player.has_node("NameTag"):
 				var playerNameTag = player.get_node("NameTag")
-				playerNameTag.text = player.name
+				playerNameTag.text = player.player_nick
 				playerNameTag.look_at(my_player.savedCameraPos,Vector3.UP)
 				playerNameTag.rotate_object_local(Vector3.UP, deg_to_rad(180))
 		update_my_race_tag()
@@ -98,8 +98,8 @@ func update_my_race_tag():
 		raceProgressBar.value = progress_percent
 		my_player.raceprogress = progress_percent
 		myMarker.global_position.x = raceProgressBar.global_position.x - (myMarker.size.x/2) + (progress_percent/100 * raceProgressBar.size.x)
-	else:
-		myMarker.global_position.y = raceProgressBar.global_position.y - myMarker.size.y*1.2
+		
+	myMarker.global_position.y = raceProgressBar.global_position.y - myMarker.size.y*1.2
 
 func update_race_positions():
 	var players = get_tree().get_nodes_in_group("players")
@@ -114,8 +114,8 @@ func update_race_positions():
 	for winner in winners:
 		var label = RichTextLabel.new()
 		label.bbcode_enabled = true
-		label.text = "[color=#FFD700]%s# %s[/color] " %[str(i), winner]
-
+		label.modulate = Color.GOLD
+		label.text = "%s# %s" %[str(i), winner]
 		label.scroll_active = false
 		label.fit_content = true
 		racePositionsCont.add_child(label)
@@ -123,11 +123,12 @@ func update_race_positions():
 
 	for player in remaining_players:
 		var label = RichTextLabel.new()
-		label.bbcode_enabled = true
-		label.text = "[color=#888888]%s#[/color] " % str(i)
+		label.modulate = Color.WHITE
+		label.text = "%s# " % str(i)
 
 		if my_player and player.name == my_player.name:
-			label.text += "[color=#11ff11]%s[/color]" % player.name
+			label.modulate = Color.LIME_GREEN
+			label.text += "%s" % player.name
 		else:
 			label.text += "%s" % player.name
 
@@ -151,6 +152,7 @@ func update_timer(player_id: int, time: float):
 func setup_race(player: CharacterBody3D):
 	race_started = true
 	race_times[player.player_id] = {"time": 0.0, "checkpoint": 0}
+	
 
 
 func add_marker(id: int):
@@ -182,7 +184,6 @@ func position_start(pos):
 func _on_finish_line_entered(body: Node):
 	if multiplayer.is_server() and body.is_in_group("players") and body.player_id in race_times:
 		var player_id = body.player_id
-		print("Winner!")
 		
 		var time = race_times[body.player_id]["time"]
 		notify_finish.rpc(body.player_id, time)
@@ -193,6 +194,7 @@ func notify_finish(player_id: int, time: float):
 	winners.append(str(player_id))
 	if my_player:
 		if my_player.name == str(player_id):
+			PlayerProfile.add_match()
 			var total_ms = int(time * 1000)
 			var hours = total_ms / 3600000
 			var minutes = (total_ms % 3600000) / 60000
@@ -207,7 +209,6 @@ func notify_finish(player_id: int, time: float):
 			race_finished = true
 			my_player.raceprogress = 100
 			my_player.raceFinished = true
-			my_player.targetCameraFov = my_player.WIN_FOV
 			
 			if raceFinishSplash and raceFinishSplash is ShaderMaterial:
 				raceFinishSplash.set_shader_parameter("base_alpha", 0.05)
