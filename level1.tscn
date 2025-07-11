@@ -1,6 +1,6 @@
 [gd_scene load_steps=21 format=3 uid="uid://bf5gwq4g072dv"]
 
-[ext_resource type="Script" path="res://Level1.gd" id="1_rmp53"]
+[ext_resource type="Script" path="res://Scripts/Level1.gd" id="1_rmp53"]
 [ext_resource type="Texture2D" uid="uid://bhyftyw65ea6u" path="res://Textures/industrial_sunset_02_puresky_2k.exr" id="2_pcu2a"]
 [ext_resource type="Shader" path="res://level1.gdshader" id="4_o47j5"]
 [ext_resource type="Texture2D" uid="uid://53vjyocyupew" path="res://Checkered.jpg" id="5_beaj1"]
@@ -34,7 +34,6 @@ sky = SubResource("Sky_6siw2")
 ambient_light_color = Color(1, 1, 1, 1)
 fog_light_color = Color(0.721569, 0.74902, 0.94902, 1)
 fog_density = 0.0015
-volumetric_fog_enabled = true
 volumetric_fog_density = 0.0235
 
 [sub_resource type="Curve3D" id="Curve3D_g5r5j"]

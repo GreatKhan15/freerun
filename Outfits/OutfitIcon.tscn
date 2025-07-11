@@ -1,0 +1,50 @@
+[gd_scene load_steps=5 format=3 uid="uid://c1ikjtjxdnfx2"]
+
+[ext_resource type="Script" path="res://Outfits/OutfitIcon.gd" id="1_fd6wq"]
+
+[sub_resource type="Gradient" id="Gradient_w26d8"]
+colors = PackedColorArray(0.971311, 0.971311, 0.971311, 1, 0.355314, 0.355314, 0.355314, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_cdiyu"]
+gradient = SubResource("Gradient_w26d8")
+fill = 1
+fill_from = Vector2(0.521368, 0.491453)
+fill_to = Vector2(1, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_n7do0"]
+
+[node name="OutfitIcon" type="Control"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 100.0
+offset_bottom = 100.0
+script = ExtResource("1_fd6wq")
+
+[node name="BG" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = SubResource("GradientTexture2D_cdiyu")
+expand_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 2
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/normal = SubResource("StyleBoxEmpty_n7do0")

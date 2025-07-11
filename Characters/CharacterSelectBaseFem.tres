@@ -1,0 +1,45 @@
+[gd_resource type="AnimationNodeStateMachine" load_steps=10 format=3 uid="uid://b4qx0eklibcas"]
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_wxxqk"]
+animation = &"Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_gt00k"]
+animation = &"Idle"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_ita63"]
+animation = &"InspectCloth1"
+
+[sub_resource type="AnimationNodeAnimation" id="AnimationNodeAnimation_4g6wd"]
+animation = &"InspectCloth2"
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_0adpo"]
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_2mm6x"]
+switch_mode = 2
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_m8pul"]
+switch_mode = 2
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_vihxn"]
+switch_mode = 2
+advance_mode = 2
+
+[sub_resource type="AnimationNodeStateMachineTransition" id="AnimationNodeStateMachineTransition_mtjoj"]
+switch_mode = 2
+advance_mode = 2
+
+[resource]
+states/Idle/node = SubResource("AnimationNodeAnimation_gt00k")
+states/Idle/position = Vector2(399, -1)
+"states/Idle 2/node" = SubResource("AnimationNodeAnimation_wxxqk")
+"states/Idle 2/position" = Vector2(656, 149)
+states/InspectCloth1/node = SubResource("AnimationNodeAnimation_ita63")
+states/InspectCloth1/position = Vector2(641, 41)
+states/InspectCloth2/node = SubResource("AnimationNodeAnimation_4g6wd")
+states/InspectCloth2/position = Vector2(475, 154)
+states/Start/position = Vector2(327, 93)
+transitions = ["Start", "Idle", SubResource("AnimationNodeStateMachineTransition_0adpo"), "Idle", "InspectCloth1", SubResource("AnimationNodeStateMachineTransition_2mm6x"), "InspectCloth1", "Idle 2", SubResource("AnimationNodeStateMachineTransition_m8pul"), "Idle 2", "InspectCloth2", SubResource("AnimationNodeStateMachineTransition_vihxn"), "InspectCloth2", "Idle", SubResource("AnimationNodeStateMachineTransition_mtjoj")]
+graph_offset = Vector2(-130, -57)
